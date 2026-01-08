@@ -42,18 +42,18 @@
 
 <div id="effects-layer"></div>
 
-<div id="main-content-area" class="flex-grow p-4 md:p-10 relative overflow-hidden">
+<div id="main-content-area" class="flex-grow p-4 md:p-10 relative overflow-hidden w-full h-screen">
     <div id="image-overlay" class="absolute inset-0 bg-gradient-to-t from-gray-900/50 to-transparent z-20 pointer-events-none"></div>
-    <img id="current-image" class="showcase-image" alt="Slideshow Image">
+    <img id="current-image" class="showcase-image w-full h-full object-cover absolute top-0 left-0" alt="Slideshow Image">
     <div id="slideshow"></div>
 
     <div class="absolute top-4 left-4 z-40 p-2 rounded-xl logo-card">
-        <img src="/static/logo.png" class="w-16 h-16 object-contain rounded-lg">
+        <img src="/static/logo.png" class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg">
     </div>
 
     <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
         <div class="px-4 py-2 flex items-center space-x-3 rounded-full player-card">
-            <button id="play-pause-btn" class="player-button">
+            <button id="play-pause-btn" class="player-button  p-3 sm:p-4 rounded-full">
                 <i data-lucide="play"></i>
             </button>
             <div class="flex flex-col text-left">
