@@ -1,0 +1,3 @@
+/* christmas.css */
+body { background: linear-gradient(135deg, #7a0000, #004300); }
+.player-button { background: #d40000; box-shadow: 0 0 15px #ff0000, 0 0 25px #00ff00; }

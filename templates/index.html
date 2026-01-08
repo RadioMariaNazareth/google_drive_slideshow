@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radio Maria Nazareth - Images</title>
+
+<!-- Base CSS -->
+<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/style.css" id="theme-style">
+
+<link rel="shortcut icon" href="/static/logo.png" type="image/x-icon">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+/* Falling emojis */
+#effects-layer {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+.falling-emoji {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    opacity: 0;
+    animation-name: fall;
+    animation-timing-function: linear;
+}
+
+@keyframes fall {
+    0%   { transform: translateY(-50px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<div id="effects-layer"></div>
+
+<div id="main-content-area" class="flex-grow p-4 md:p-10 relative overflow-hidden">
+    <div id="image-overlay" class="absolute inset-0 bg-gradient-to-t from-gray-900/50 to-transparent z-20 pointer-events-none"></div>
+    <img id="current-image" class="showcase-image" alt="Slideshow Image">
+    <div id="slideshow"></div>
+
+    <div class="absolute top-4 left-4 z-40 p-2 rounded-xl logo-card">
+        <img src="/static/logo.png" class="w-16 h-16 object-contain rounded-lg">
+    </div>
+
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
+        <div class="px-4 py-2 flex items-center space-x-3 rounded-full player-card">
+            <button id="play-pause-btn" class="player-button">
+                <i data-lucide="play"></i>
+            </button>
+            <div class="flex flex-col text-left">
+                <span class="text-sm font-bold tracking-wide player-title">Radio Maria Nazareth</span>
+                <span id="player-status" class="text-xs opacity-70">Connecting...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ======= THEME DETECTION =======
+const themeLink = document.getElementById("theme-style");
+const effectsLayer = document.getElementById("effects-layer");
+const today = new Date();
+let month = today.getMonth() + 1;
+const day = today.getDate();
+
+let currentTheme = "default";
+
+if ((month === 12 && day >= 1) || (month === 1 && day <= 10)) {
+    themeLink.href = "/static/christmas.css";
+    currentTheme = "christmas";
+} else if ((month === 3 && day >= 15) || (month === 4 && day <= 20)) {
+    themeLink.href = "/static/easter.css";
+    currentTheme = "easter";
+} else {
+    themeLink.href = "/static/style.css";
+    currentTheme = "default";
+}
+
+// ======= EMOJI FALLING SETUP =======
+const themeEmojis = {
+    christmas: ["🙏","🕊️","✝️","🎄","🎁","❄️","⛄","🎅","⭐","👼"],
+    easter: ["🐣","🐥","🐇","🐰","🙏","🕊️","✝️"],
+    default: []
+};
+
+function createFallingEmoji() {
+    const emojis = themeEmojis[currentTheme];
+    if (!emojis.length) return; // no emojis for default
+
+    const emoji = document.createElement("div");
+    emoji.className = "falling-emoji";
+    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    
+    // Random horizontal position
+    emoji.style.left = Math.random() * 100 + "vw";
+    // Random size
+    emoji.style.fontSize = 20 + Math.random() * 25 + "px";
+    // Random speed
+    emoji.style.animationDuration = 5 + Math.random() * 8 + "s";
+    // Random delay
+    emoji.style.animationDelay = Math.random() * 5 + "s";
+
+    effectsLayer.appendChild(emoji);
+
+    emoji.addEventListener("animationend", () => emoji.remove());
+}
+
+// Generate emoji every 400ms
+setInterval(createFallingEmoji, 400);
+
+// ======= AUDIO PLAYER =======
+const audio = new Audio("https://live.ecast.co.il/stream/maria");
+audio.preload = "none";
+let playing = false;
+
+const btn = document.getElementById("play-pause-btn");
+const status = document.getElementById("player-status");
+
+btn.onclick = () => { playing ? audio.pause() : audio.play(); }
+
+audio.onplay = () => { playing = true; status.textContent = "LIVE Stream"; updateButton(); }
+audio.onpause = () => { playing = false; status.textContent = "Paused"; updateButton(); }
+audio.onerror = () => { status.textContent = "Stream Error"; updateButton(); }
+
+function updateButton() {
+    btn.innerHTML = `<i data-lucide="${playing ? "pause" : "play"}"></i>`;
+    lucide.createIcons();
+}
+
+
+/* ===== SLIDESHOW ===== */
+const slideshow = document.getElementById("slideshow");
+let images = [];
+let index = 0;
+
+async function loadImages() {
+    const res = await fetch("/api/images");
+    const data = await res.json();
+
+    images = data.images.map(f =>
+        f.thumbnailLink.replace("=s220", "=s1600")
+    );
+
+    images.forEach((src, i) => {
+        const img = document.createElement("img");
+        img.src = src;
+        img.classList.add("showcase-image");
+        img.onerror = () => img.src = "/static/logo.png";
+        if (i === 0) img.classList.add("active");
+        slideshow.appendChild(img);
+    });
+
+    startSlideshow();
+}
+
+function startSlideshow() {
+    setInterval(() => {
+        const imgs = slideshow.querySelectorAll("img");
+        imgs[index].classList.remove("active");
+        index = (index + 1) % imgs.length;
+        imgs[index].classList.add("active");
+    }, 6000); // ⏱ change image every 6 seconds
+}
+
+loadImages();
+lucide.createIcons();
+</script>
+
+</body>
+</html>
