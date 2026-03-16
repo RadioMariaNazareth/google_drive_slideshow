@@ -46,11 +46,10 @@
     <div id="image-overlay" class="absolute inset-0 bg-gradient-to-t from-gray-900/50 to-transparent z-20 pointer-events-none"></div>
     <img id="current-image" class="showcase-image w-full h-full object-cover absolute top-0 left-0" alt="Slideshow Image">
     <div id="slideshow"></div>
-    <div id="live-layer" class="absolute inset-0 z-30 bg-black opacity-0 transition-opacity duration-1500"></div>
-    <div class="absolute top-4 left-4 z-50 p-2 rounded-xl logo-card">
+
+    <div class="absolute top-4 left-4 z-40 p-2 rounded-xl logo-card">
         <img src="/static/logo.png" class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg">
     </div>
-
 
     <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
         <div class="px-4 py-2 flex items-center space-x-3 rounded-full player-card">
@@ -186,45 +185,6 @@ function startSlideshow() {
 
 loadImages();
 lucide.createIcons();
-
-// Live detection// ======= LIVE DETECTION & SCENE SWITCHING =======
-let liveActive = false;
-const liveLayer = document.getElementById("live-layer");
-const channelId = "UC8apXBDXyWf1BxBYjTNfUoQ"; 
-
-async function checkLive() {
-    console.log("Checking live status...");
-    try {
-        const res = await fetch("/api/live");
-        const data = await res.json();
-
-        // If Live is detected and we aren't showing it yet
-        if (data.live && !liveActive) {
-            console.log("Switching to LIVE mode!");
-            liveLayer.innerHTML = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/live_stream?channel=${channelId}&autoplay=1&mute=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-            liveLayer.style.opacity = "1";
-            liveLayer.style.pointerEvents = "auto";
-            liveActive = true;
-        } 
-        // If Live ended and we are still in live mode
-        else if (!data.live && liveActive) {
-            console.log("Live ended, switching back to images.");
-            liveLayer.style.opacity = "0";
-            liveLayer.style.pointerEvents = "none";
-            setTimeout(() => { 
-                liveLayer.innerHTML = ""; 
-            }, 1500);
-            liveActive = false;
-        }
-    } catch(e) {
-        console.error("Live check failed", e);
-    }
-}
-
-// Check every 30 seconds
-setInterval(checkLive, 30000);
-checkLive(); // Initial check
-
 </script>
 
 </body>
