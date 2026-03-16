@@ -63,4 +63,9 @@ def api_live():
         return jsonify({"live": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    # Render provides a $PORT environment variable. 
+    # If it's not there, we default to 10000 (Render's common default)
+    port = int(os.environ.get("PORT", 10000))
+    
+    # Use 0.0.0.0 so the outside world can connect
+    app.run(host="0.0.0.0", port=port)
