@@ -77,7 +77,7 @@ let currentTheme = "default";
 if ((month === 12 && day >= 1) || (month === 1 && day <= 15)) {
     themeLink.href = "/static/christmas.css";
     currentTheme = "christmas";
-} else if ((month === 3 && day >= 15) || (month === 4 && day <= 20)) {
+} else if ((month === 3 && day >= 20) || (month === 4 && day <= 20)) {
     themeLink.href = "/static/easter.css";
     currentTheme = "easter";
 } else {
@@ -88,7 +88,7 @@ if ((month === 12 && day >= 1) || (month === 1 && day <= 15)) {
 // ======= EMOJI FALLING SETUP =======
 const themeEmojis = {
     christmas: ["🙏","🕊️","✝️","🎄","🎁","❄️","⛄","🎅","⭐","👼"],
-    easter: ["🐣","🐥","🐇","🐰","🙏","🕊️","✝️"],
+    easter: ["🐣","🐥","🙏","🕊️","✝️"],
     default: []
 };
 
