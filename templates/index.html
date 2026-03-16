@@ -187,35 +187,43 @@ function startSlideshow() {
 loadImages();
 lucide.createIcons();
 
-// Live detection
-const liveLayer = document.getElementById('live-layer');
-let currentLiveState = false;
+// Live detection// ======= LIVE DETECTION & SCENE SWITCHING =======
+let liveActive = false;
+const liveLayer = document.getElementById("live-layer");
+const channelId = "UC8apXBDXyWf1BxBYjTNfUoQ"; 
 
 async function checkLive() {
-  try {
-    const res = await fetch('/api/live');
-    const data = await res.json();
-    
-    if (data.live && !currentLiveState) {
-      // Fade in
-      liveLayer.innerHTML = '<iframe src="https://www.youtube.com/embed/live_stream?channel=@radiomariamnazareth&autoplay=1" allow="autoplay; fullscreen" allowfullscreen style="width:100%;height:100%;border:none;"></iframe>';
-      liveLayer.classList.add('opacity-100');
-      currentLiveState = true;
-    } else if (!data.live && currentLiveState) {
-      // Fade out
-      liveLayer.classList.remove('opacity-100');
-      setTimeout(() => {
-        liveLayer.innerHTML = '';
-      }, 1500);
-      currentLiveState = false;
+    console.log("Checking live status...");
+    try {
+        const res = await fetch("/api/live");
+        const data = await res.json();
+
+        // If Live is detected and we aren't showing it yet
+        if (data.live && !liveActive) {
+            console.log("Switching to LIVE mode!");
+            liveLayer.innerHTML = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/live_stream?channel=${channelId}&autoplay=1&mute=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+            liveLayer.style.opacity = "1";
+            liveLayer.style.pointerEvents = "auto";
+            liveActive = true;
+        } 
+        // If Live ended and we are still in live mode
+        else if (!data.live && liveActive) {
+            console.log("Live ended, switching back to images.");
+            liveLayer.style.opacity = "0";
+            liveLayer.style.pointerEvents = "none";
+            setTimeout(() => { 
+                liveLayer.innerHTML = ""; 
+            }, 1500);
+            liveActive = false;
+        }
+    } catch(e) {
+        console.error("Live check failed", e);
     }
-  } catch(e) {
-    console.error('Live check failed', e);
-  }
 }
 
-setInterval(checkLive, 10000);
-checkLive();
+// Check every 30 seconds
+setInterval(checkLive, 30000);
+checkLive(); // Initial check
 
 </script>
 

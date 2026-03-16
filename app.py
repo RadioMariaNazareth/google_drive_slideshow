@@ -1,5 +1,4 @@
 import os
-import requests
 from flask import Flask, render_template, jsonify, request
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
@@ -10,19 +9,11 @@ app = Flask(__name__)
 
 API_KEY = os.environ.get("GOOGLE_API_KEY")
 FOLDER_ID = os.environ.get("GOOGLE_FOLDER_ID")
+YOUTUBE_CHANNEL_ID = os.environ.get("YOUTUBE_CHANNEL_ID")
 
-# Use the /live URL of your channel
-YOUTUBE_LIVE_URL = "https://www.youtube.com/@radiomariamnazareth/live"
-
-
-# ----------------- Google Drive -----------------
+# --- Google Drive Logic ---
 def get_drive_batch(page_token=None):
-    service = build(
-        "drive",
-        "v3",
-        developerKey=API_KEY,
-        cache_discovery=False
-    )
+    service = build("drive", "v3", developerKey=API_KEY, cache_discovery=False)
     query = f"'{FOLDER_ID}' in parents and mimeType contains 'image/'"
     results = service.files().list(
         q=query,
@@ -35,40 +26,41 @@ def get_drive_batch(page_token=None):
         "nextPageToken": results.get("nextPageToken")
     }
 
-
-# ----------------- YouTube Live Detection -----------------
-def is_youtube_live():
-    try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get(YOUTUBE_LIVE_URL, headers=headers, timeout=5)
-        html = r.text
-        # Detect if any live is currently streaming
-        return '"isLiveNow":true' in html
-    except Exception as e:
-        print("YouTube live check failed:", e)
-        return False
-
-
-# ----------------- Routes -----------------
+# --- Routes ---
 @app.route("/")
 def index():
+    print(">>> Serving index.html")
     return render_template("index.html")
-
 
 @app.route("/api/images")
 def api_images():
-    token = None
-    token = request.args.get("token")
-    data = get_drive_batch(token)
-    return jsonify(data)
-
+    print(">>> Fetching images from Google Drive")
+    try:
+        token = request.args.get("token")
+        data = get_drive_batch(token)
+        return jsonify(data)
+    except Exception as e:
+        print(f"[ERROR] Drive API failed: {e}")
+        return jsonify({"images": [], "error": str(e)}), 500
 
 @app.route("/api/live")
 def api_live():
-    return jsonify({"live": is_youtube_live()})
+    print(f"\n[CHECK] Querying YouTube for: {YOUTUBE_CHANNEL_ID}")
+    try:
+        youtube = build("youtube", "v3", developerKey=API_KEY)
+        search_request = youtube.search().list(
+            part="snippet",
+            channelId=YOUTUBE_CHANNEL_ID,
+            type="video",
+            eventType="live"
+        )
+        response = search_request.execute()
+        is_live = len(response.get("items", [])) > 0
+        print(f"[RESULT] Live Status: {'ONLINE' if is_live else 'OFFLINE'}")
+        return jsonify({"live": is_live})
+    except Exception as e:
+        print(f"[ERROR] YouTube API failed: {e}")
+        return jsonify({"live": False, "error": str(e)}), 500
 
-
-# ----------------- Start Server -----------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=8080, debug=True)
