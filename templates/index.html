@@ -140,27 +140,43 @@ function updateButton() {
 /* ===== SLIDESHOW ===== */
 const slideshow = document.getElementById("slideshow");
 let images = [];
+let imageSignature = "";
 let index = 0;
+let slideshowTimer = null;
 
-async function loadImages() {
+async function fetchImages() {
     let token = null;
     let allImages = [];
 
     do {
         let url = "/api/images";
-        if (token) url += "?token=" + token;
+        if (token) url += "?token=" + encodeURIComponent(token);
 
-        const res = await fetch(url);
+        const res = await fetch(url, { cache: "no-store" });
         const data = await res.json();
 
-        allImages = allImages.concat(data.images);
+        allImages = allImages.concat(data.images || []);
         token = data.nextPageToken;
 
     } while (token);
 
-    images = allImages.map(f =>
-        f.thumbnailLink.replace("=s220", "=s1600")
-    );
+    return allImages;
+}
+
+function showImage(nextIndex) {
+    const imgs = slideshow.querySelectorAll("img");
+    if (!imgs.length) return;
+
+    imgs[index]?.classList.remove("active");
+    index = nextIndex;
+    imgs[index].classList.add("active");
+}
+
+function renderImages(files) {
+    slideshow.innerHTML = "";
+    index = 0;
+
+    images = files.map(f => f.thumbnailLink.replace("=s220", "=s1600"));
 
     images.forEach((src, i) => {
         const img = document.createElement("img");
@@ -170,20 +186,37 @@ async function loadImages() {
         if (i === 0) img.classList.add("active");
         slideshow.appendChild(img);
     });
+}
 
-    startSlideshow();
+async function refreshImages() {
+    const files = await fetchImages();
+    const nextSignature = files.map(f => f.id).join(",");
+
+    if (nextSignature === imageSignature) return;
+
+    imageSignature = nextSignature;
+    renderImages(files);
+    showImage(0);
 }
 
 function startSlideshow() {
-    setInterval(() => {
+    if (slideshowTimer) clearInterval(slideshowTimer);
+
+    slideshowTimer = setInterval(() => {
         const imgs = slideshow.querySelectorAll("img");
-        imgs[index].classList.remove("active");
-        index = (index + 1) % imgs.length;
-        imgs[index].classList.add("active");
+        if (!imgs.length) return;
+
+        showImage((index + 1) % imgs.length);
     }, 6000); // ⏱ change image every 6 seconds
 }
 
-loadImages();
+async function initSlideshow() {
+    await refreshImages();
+    startSlideshow();
+    setInterval(refreshImages, 10000); // check Drive every 10 seconds
+}
+
+initSlideshow();
 lucide.createIcons();
 </script>
 

@@ -26,7 +26,8 @@ def get_drive_batch(page_token=None):
     results = service.files().list(
         q=query,
         pageSize=20,
-        fields="nextPageToken, files(id, name, thumbnailLink)",
+        fields="nextPageToken, files(id, name, thumbnailLink, createdTime)",
+        orderBy="createdTime desc",
         pageToken=page_token
     ).execute()
 
